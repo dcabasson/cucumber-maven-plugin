@@ -22,6 +22,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang.ObjectUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.maven.doxia.module.apt.AptParser;
 import org.apache.maven.doxia.module.confluence.ConfluenceSinkFactory;
@@ -53,6 +54,61 @@ import org.codehaus.plexus.util.IOUtil;
  */
 
 public class FeaturesReport extends AbstractMavenReport {
+
+    /**
+     * The version of the confluence service to contact
+     * 
+     * @parameter default-value=2
+     * @required
+     */
+    private Integer confluenceWsdlVersion = 2;
+
+    /**
+     * the output directory is not used
+     * 
+     * @parameter default-value="${project.reporting.outputDirectory}"
+     * @required
+     */
+    private File outputDirectory;
+
+    /**
+     * the parent page for creating feature pages
+     * 
+     * @parameter default-value="ICOS"
+     * @required
+     */
+    private String confluenceSpaceKey = "ICOS";
+
+    /**
+     * the parent page for creating feature pages
+     * 
+     * @parameter default-value="ICOS Capabilities"
+     * @required
+     */
+    private String confluenceParentPage = "ICOS Capabilities";
+
+    /**
+     * the location of the confluence server
+     * 
+     * @parameter default-value="http://confluence"
+     * @required
+     */
+    private String confluenceUrl = "http://confluence";
+
+    /**
+     * the username for publishing to the confluence server, if different from the scm username
+     * 
+     * @parameter default-value="http://confluence"
+     * @required
+     */
+    private String confluenceUsername = null;
+
+    /**
+     * the password for publishing to the confluence server, if different from the scm password
+     * 
+     * @parameter
+     */
+    private String confluencePassword = null;
 
     /**
      * @parameter expression="${project.scm.developerConnection}"
@@ -103,7 +159,7 @@ public class FeaturesReport extends AbstractMavenReport {
         public void directoryWalkFinished() {
             for (final String aCapability : this.capabilities.keySet()) {
                 final CapabilityDirectory capability = this.capabilities.get(aCapability);
-                FeaturesReport.this.confluenceClient.generateConfluenceCapabilityPage("ICOS Capabilities",
+                FeaturesReport.this.confluenceClient.generateConfluenceCapabilityPage(confluenceParentPage,
                         capability.name);
 
                 for (final String aUseCase : capability.useCases.keySet()) {
@@ -155,7 +211,8 @@ public class FeaturesReport extends AbstractMavenReport {
                                     e);
                         }
                     }
-                    // generate the confluence epic page before the generation of feature pages
+                    // generate the confluence epic page before the generation of feature
+                    // pages
                     // in order to be able to generate the feature pages as children
                     Boolean epicFeatureSummariesChanged = false;
                     FeaturesReport.this.confluenceClient.generateConfluenceEpicPage(capability.name, epicName,
@@ -171,8 +228,10 @@ public class FeaturesReport extends AbstractMavenReport {
                         }
                     }
 
-                    // generate the confluence epic page after the generation of feature pages
-                    // in order to be able to add the feature summaries to the epic page content
+                    // generate the confluence epic page after the generation of feature
+                    // pages
+                    // in order to be able to add the feature summaries to the epic page
+                    // content
                     if (!featureSummaries.isEmpty()) {
                         try {
 
@@ -945,14 +1004,6 @@ public class FeaturesReport extends AbstractMavenReport {
     private Renderer siteRenderer;
 
     /**
-     * the output directory is not used
-     * 
-     * @parameter default-value="${project.reporting.outputDirectory}"
-     * @required
-     */
-    private File outputDirectory;
-
-    /**
      * @parameter default-value="${basedir}/src/main/features"
      * @required
      */
@@ -977,7 +1028,14 @@ public class FeaturesReport extends AbstractMavenReport {
 
     @Override
     protected void executeReport(final Locale locale) throws MavenReportException {
-        this.confluenceClient = new ConfluenceSoapClient(this.username, this.password);
+
+        if (confluenceWsdlVersion == 1) {
+            this.confluenceClient = new ConfluenceV1SoapClient(getConfluenceUsername(), getConfluencePassword(),
+                    confluenceSpaceKey, confluenceUrl);
+        } else {
+            this.confluenceClient = new ConfluenceV2SoapClient(getConfluenceUsername(), getConfluencePassword(),
+                    confluenceSpaceKey, confluenceUrl);
+        }
 
         if (this.featuresDirectory.exists() && this.featuresDirectory.isDirectory()) {
             final List<String> allIncludes = new ArrayList<String>();
@@ -1170,4 +1228,11 @@ public class FeaturesReport extends AbstractMavenReport {
         return strConfluence;
     }
 
+    private String getConfluenceUsername() {
+        return (this.confluenceUsername == null) ? this.username : this.confluenceUsername;
+    }
+
+    private String getConfluencePassword() {
+        return (this.confluencePassword == null) ? this.password : this.confluencePassword;
+    }
 }
