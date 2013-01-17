@@ -1,7 +1,5 @@
 package org.codehaus.mojo.cucumber;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -9,13 +7,13 @@ import com.atlassian.confluence.rpc.RemoteException;
 import com.atlassian.confluence.rpc.soap.beans.RemotePage;
 import com.atlassian.confluence.rpc.soap.beans.RemotePageUpdateOptions;
 
-import confluence.rpc.soap_axis.confluenceservice_v2.ConfluenceSoapServiceProxy;
+import confluence.rpc.soap_axis.confluenceservice.ConfluenceServiceProxy;
 
 /**
  * @author Qiuliang Tang
  */
 
-public class ConfluenceSoapClient {
+public abstract class ConfluenceSoapClient<P extends ConfluenceServiceProxy> {
 
     /**
      * @param args
@@ -26,19 +24,24 @@ public class ConfluenceSoapClient {
 
     private final String spaceKey;
 
-    private final Map<String, String> attachmentsMap;
+    private final String confluenceServerRoot;
 
     public ConfluenceSoapClient(final String username, final String password) {
+        this(username, password, "ICOS", "http://confluence");
+    }
+
+    public ConfluenceSoapClient(final String username, final String password, final String spaceKey,
+            final String confluenceServerRoot) {
         this.username = username;
         this.password = password;
-        this.spaceKey = "ICOS";
-        this.attachmentsMap = new HashMap<String, String>();
+        this.spaceKey = spaceKey;
+        this.confluenceServerRoot = confluenceServerRoot;
     }
 
     public void generateConfluenceCapabilityPage(final String parentPageTitle, final String pageTitle) {
         // TODO Auto-generated method stub
         try {
-            final ConfluenceSoapServiceProxy confluenceClient = new ConfluenceSoapServiceProxy();
+            final ConfluenceServiceProxy confluenceClient = createClient();
             final String token = confluenceClient.login(this.username, this.password);
 
             RemotePage page;
@@ -67,9 +70,9 @@ public class ConfluenceSoapClient {
             final String wikiContent, final String textComments, final Boolean epicFeatureSummariesChanged,
             final Boolean isSecondTimeEnter) {
         try {
-            final ConfluenceSoapServiceProxy confluenceClient = new ConfluenceSoapServiceProxy();
+            final P confluenceClient = createClient();
             final String token = confluenceClient.login(this.username, this.password);
-            final String xhtmlContent = confluenceClient.convertWikiToStorageFormat(token, wikiContent);
+            final String storableContent = createStorableContent(confluenceClient, token, wikiContent);
             RemotePage page;
             try {
                 page = confluenceClient.getPage(token, this.spaceKey, pageTitle);
@@ -99,7 +102,8 @@ public class ConfluenceSoapClient {
                         e.printStackTrace();
                     }
 
-                    // update page based on the revisions of package.apt and the feature files
+                    // update page based on the revisions of package.apt and the feature
+                    // files
                     final String pageContent = page.getContent();
                     final Pattern pattern = Pattern.compile("Updated from revision (\\d+)");
                     final Matcher pageMatcher = pattern.matcher(pageContent);
@@ -120,14 +124,14 @@ public class ConfluenceSoapClient {
                                 final String topRevision = this.getTopRevision(textComments);
                                 if (!topRevision.isEmpty()) {
                                     tipComment = "<p>&nbsp;</p><p>Updated from revision " + topRevision + "</p>";
-                                    page.setContent(xhtmlContent + tipComment);
+                                    page.setContent(storableContent + tipComment);
                                 } else {
                                     // will not reach here since topRevision should not be empty
-                                    page.setContent(xhtmlContent + tipComment);
+                                    page.setContent(storableContent + tipComment);
                                 }
                                 updateOptions.setVersionComment("\n" + verComments);
                             } else {
-                                page.setContent(xhtmlContent + tipComment);
+                                page.setContent(storableContent + tipComment);
                                 updateOptions.setVersionComment("\nFeature summaries updated.");
                             }
                             confluenceClient.updatePage(token, page, updateOptions);
@@ -135,7 +139,8 @@ public class ConfluenceSoapClient {
                     } else {
                         // tipComment is not contained in the pageContent
                         // meaning package.apt did not exist before
-                        // the epic page content could be empty or contain only feature summaries
+                        // the epic page content could be empty or contain only feature
+                        // summaries
                         if (!textComments.isEmpty() || epicFeatureSummariesChanged) {
                             final RemotePageUpdateOptions updateOptions = new RemotePageUpdateOptions();
                             if (!textComments.isEmpty()) {
@@ -143,14 +148,14 @@ public class ConfluenceSoapClient {
                                 if (!topRevision.isEmpty()) {
                                     final String tipComment = "<p>&nbsp;</p><p>Updated from revision " + topRevision
                                             + "</p>";
-                                    page.setContent(xhtmlContent + tipComment);
+                                    page.setContent(storableContent + tipComment);
                                 } else {
                                     // will not reach here since topRevision should not be empty
-                                    page.setContent(xhtmlContent);
+                                    page.setContent(storableContent);
                                 }
                                 updateOptions.setVersionComment(textComments);
                             } else {
-                                page.setContent(xhtmlContent);
+                                page.setContent(storableContent);
                                 updateOptions.setVersionComment("\nFeature summaries updated.");
                             }
                             confluenceClient.updatePage(token, page, updateOptions);
@@ -182,9 +187,9 @@ public class ConfluenceSoapClient {
             final String wikiContent, final String textComments) {
         Boolean featureChanged = false;
         try {
-            final ConfluenceSoapServiceProxy confluenceClient = new ConfluenceSoapServiceProxy();
+            final P confluenceClient = createClient();
             final String token = confluenceClient.login(this.username, this.password);
-            final String xhtmlContent = confluenceClient.convertWikiToStorageFormat(token, wikiContent);
+            final String storableContent = createStorableContent(confluenceClient, token, wikiContent);
             RemotePage page;
             try {
                 page = confluenceClient.getPage(token, this.spaceKey, pageTitle);
@@ -233,7 +238,7 @@ public class ConfluenceSoapClient {
                         final RemotePageUpdateOptions updateOptions = new RemotePageUpdateOptions();
                         final String topRevision = this.getTopRevision(textComments);
                         tipComment = "<p>&nbsp;</p><p>Updated from revision " + topRevision + "</p>";
-                        page.setContent(xhtmlContent + tipComment);
+                        page.setContent(storableContent + tipComment);
                         updateOptions.setVersionComment("\n" + verComments);
                         confluenceClient.updatePage(token, page, updateOptions);
                     }
@@ -242,7 +247,7 @@ public class ConfluenceSoapClient {
                     final RemotePageUpdateOptions updateOptions = new RemotePageUpdateOptions();
                     final String topRevision = this.getTopRevision(textComments);
                     final String tipComment = "<p>&nbsp;</p><p>Updated from revision " + topRevision + "</p>";
-                    page.setContent(xhtmlContent + tipComment);
+                    page.setContent(storableContent + tipComment);
                     updateOptions.setVersionComment(textComments);
                     confluenceClient.updatePage(token, page, updateOptions);
                 }
@@ -261,7 +266,7 @@ public class ConfluenceSoapClient {
                 final RemotePageUpdateOptions updateOptions = new RemotePageUpdateOptions();
                 final String topRevision = this.getTopRevision(textComments);
                 final String tipComment = "<p>&nbsp;</p><p>Updated from revision " + topRevision + "</p>";
-                page.setContent(xhtmlContent + tipComment);
+                page.setContent(storableContent + tipComment);
                 updateOptions.setVersionComment(textComments);
                 confluenceClient.updatePage(token, page, updateOptions);
             }
@@ -272,6 +277,15 @@ public class ConfluenceSoapClient {
 
         return featureChanged;
     }
+
+    protected abstract String createStorableContent(P confluenceClient, String token, String wikiContent)
+            throws RemoteException, java.rmi.RemoteException;
+
+    private P createClient() {
+        return createClient(confluenceServerRoot);
+    }
+
+    protected abstract P createClient(String serverRoot);
 
     public String getTopRevision(final String textComments) {
         final Pattern pattern = Pattern.compile("Updated from revision (\\d+)");
