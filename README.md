@@ -16,11 +16,11 @@ usage:
 				   <confluenceUsername>${confluence.username}</confluenceUsername>
 				   <confluencePassword>${confluence.password}</confluencePassword>
 				   <confluenceSpaceKey>SPACE_KEY</confluenceSpaceKey>
-				   <confluenceParentPage>My Applications Features Page</confluenceParentPage>
+				   <confluenceParentPage>My Application Features Page</confluenceParentPage>
 				   <confluenceWsdlVersion>1 or 2</confluenceWsdlVersion>
 				   <urlScm>scm:svn:scm_url</urlScm>
-				   <username>readonlyuser</username>
-				   <password>readonlypassword</password>
+				   <username>readonlyScmUser</username>
+				   <password>readonlyScmPassword</password>
 				</configuration>
 			</plugin>
 		</plugins>
