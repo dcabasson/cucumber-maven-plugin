@@ -200,7 +200,7 @@ public class GherkinListener implements Listener {
     private String parseDescriptionForPersonas(final String description) {
         String localDescription = description;
         for (final String persona : this.personas.keySet()) {
-            localDescription = localDescription.replaceAll(persona, "[" + persona + "|" + this.personas.get(persona)
+            localDescription = localDescription.replaceAll(persona, "[$0|" + this.personas.get(persona)
                     + "]");
         }
         return localDescription;
