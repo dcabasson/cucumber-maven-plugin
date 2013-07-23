@@ -3,6 +3,8 @@ package org.codehaus.mojo.cucumber;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.commons.lang.math.NumberUtils;
+
 import com.atlassian.confluence.rpc.RemoteException;
 import com.atlassian.confluence.rpc.soap.beans.RemotePage;
 import com.atlassian.confluence.rpc.soap.beans.RemotePageUpdateOptions;
@@ -181,6 +183,45 @@ public abstract class ConfluenceSoapClient<P extends ConfluenceServiceProxy> {
             e.printStackTrace();
         }
 
+    }
+
+    /**
+     * Retrieves the version of the source code that was used to generate a specific page from
+     * Confluence.
+     * 
+     * @param pageTitle the title of the page we want the version from
+     * @return the version of source control that this page was generated from, or <code>null</code>
+     *         if the page was not found
+     */
+    public Integer getCurrentPageVersion(final String pageTitle) {
+        Integer pageRevision = null;
+        try {
+            final P confluenceClient = createClient();
+            final String token = confluenceClient.login(this.username, this.password);
+            RemotePage page;
+            try {
+                page = confluenceClient.getPage(token, this.spaceKey, pageTitle);
+                // the page exists in confluence
+
+                // update page based on revision
+                final String pageContent = page.getContent();
+                final Pattern pattern = Pattern.compile("Updated from revision (\\d+)");
+                final Matcher pageMatcher = pattern.matcher(pageContent);
+
+                if (pageMatcher.find()) {
+                    pageRevision = NumberUtils.toInt(pageMatcher.group(1));
+                } else {
+                    // will not reach here since revision exists for each features
+                    System.out.println("Unable to extract the version from page : " + pageTitle);
+                }
+
+            } catch (final RemoteException e) {
+                // the page does not exist in confluence
+            }
+        } catch (final Exception e) {
+            e.printStackTrace();
+        }
+        return pageRevision;
     }
 
     public Boolean generateConfluenceFeaturePage(final String parentPageTitle, final String pageTitle,

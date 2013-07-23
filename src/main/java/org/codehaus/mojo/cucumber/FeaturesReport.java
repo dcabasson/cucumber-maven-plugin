@@ -22,7 +22,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.lang.ObjectUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.maven.doxia.module.apt.AptParser;
 import org.apache.maven.doxia.module.confluence.ConfluenceSinkFactory;
@@ -37,6 +36,8 @@ import org.apache.maven.reporting.MavenReportException;
 import org.apache.maven.scm.ChangeSet;
 import org.apache.maven.scm.ScmException;
 import org.apache.maven.scm.ScmFileSet;
+import org.apache.maven.scm.ScmRevision;
+import org.apache.maven.scm.ScmVersion;
 import org.apache.maven.scm.command.changelog.ChangeLogScmResult;
 import org.apache.maven.scm.manager.ScmManager;
 import org.apache.maven.scm.provider.ScmProviderRepository;
@@ -191,7 +192,8 @@ public class FeaturesReport extends AbstractMavenReport {
                             // get revision information
                             final StringBuilder builder = new StringBuilder();
                             try {
-                                final ChangeLogScmResult clScmResult = FeaturesReport.this.log(useCase.packageFile);
+                                final ChangeLogScmResult clScmResult = FeaturesReport.this.log(useCase.packageFile,
+                                        null);
                                 for (final ChangeSet aChangeSet : clScmResult.getChangeLog().getChangeSets()) {
                                     builder.append("\n");
                                     builder.append("Updated from revision ");
@@ -1064,6 +1066,7 @@ public class FeaturesReport extends AbstractMavenReport {
             final List<FeatureSummary> featureSummaries) {
         Boolean featureChanged = false;
         try {
+            this.getLog().debug("Generating feature file : " + featureFile.getAbsolutePath());
             final ConfluenceSinkFactory factory = new ConfluenceSinkFactory();
             final ByteArrayOutputStream bos = new ByteArrayOutputStream();
             final Sink sink = factory.createSink(bos, "UTF-8");
@@ -1078,26 +1081,43 @@ public class FeaturesReport extends AbstractMavenReport {
             String wikiContent = bos.toString("UTF-8");
             wikiContent = wikiContent.replaceAll("&amp;", "&");
 
-            // Add revision information
-            final StringBuilder builder = new StringBuilder();
-            try {
-                final ChangeLogScmResult clScmResult = this.log(featureFile);
-                for (final ChangeSet aChangeSet : clScmResult.getChangeLog().getChangeSets()) {
-                    builder.append("\n");
-                    builder.append("Updated from revision ");
-                    builder.append(aChangeSet.getRevision());
-                    builder.append(" by ");
-                    builder.append(aChangeSet.getAuthor());
-                    builder.append(" : ");
-                    builder.append(aChangeSet.getComment().replaceAll("\\s+", " "));
-                }
-            } catch (final MojoExecutionException e) {
-                this.getLog().error(e);
+            final Integer revisionInConfluence = this.confluenceClient.getCurrentPageVersion(featureSummary
+                    .getFeatureTitle());
+            if (revisionInConfluence == null) {
+                this.getLog().debug("This page currently does not exist in Confluence");
+            } else {
+                this.getLog().debug(
+                        "A version of the page already exists in Confluence, generated from revision : "
+                                + revisionInConfluence);
             }
-            final String textComments = builder.toString();
-            featureChanged = this.confluenceClient.generateConfluenceFeaturePage(parentPageTitle,
-                    featureSummary.getFeatureTitle(), wikiContent, textComments);
 
+            ScmVersion fromVersion;
+            if (revisionInConfluence != null) { // there is already something in Confluence
+                fromVersion = new ScmRevision(revisionInConfluence.toString());
+            } else {
+                fromVersion = null;
+            }
+
+            // Add revision information
+            final ChangeLogScmResult clScmResult = this.log(featureFile, fromVersion);
+            if (!clScmResult.getChangeLog().getChangeSets().isEmpty()) { // we have changes
+                                                                         // since last version!
+                final StringBuilder historyBuilder = new StringBuilder();
+                for (final ChangeSet aChangeSet : clScmResult.getChangeLog().getChangeSets()) {
+                    historyBuilder.append("\n");
+                    historyBuilder.append("Updated from revision ");
+                    historyBuilder.append(aChangeSet.getRevision());
+                    historyBuilder.append(" by ");
+                    historyBuilder.append(aChangeSet.getAuthor());
+                    historyBuilder.append(" : ");
+                    historyBuilder.append(aChangeSet.getComment().replaceAll("\\s+", " "));
+                }
+                featureChanged = this.confluenceClient.generateConfluenceFeaturePage(parentPageTitle,
+                        featureSummary.getFeatureTitle(), wikiContent, historyBuilder.toString());
+            }
+
+        } catch (final MojoExecutionException e) {
+            this.getLog().warn("Unable to generate the feature page correctly", e);
         } catch (final IOException e) {
             this.getLog().warn("Unable to generate the feature page correctly", e);
         }
@@ -1190,14 +1210,15 @@ public class FeaturesReport extends AbstractMavenReport {
         return repository;
     }
 
-    private ChangeLogScmResult log(final File file) throws MojoExecutionException {
+    private ChangeLogScmResult log(final File file, final ScmVersion fromVersion) throws MojoExecutionException {
         final ChangeLogScmResult changeLog;
         try {
             this.getLog().debug("File to generate the changeset : " + file);
+            this.getLog().debug("From version : " + fromVersion);
             final ScmRepository repository = this.getScmRepository(file);
 
             changeLog = this.scmManager.changeLog(repository,
-                    new ScmFileSet(new File(file.getParent()), new File(file.getName())), null, null);
+                    new ScmFileSet(new File(file.getParent()), new File(file.getName())), fromVersion, null);
         } catch (final Exception e) {
             throw new MojoExecutionException("Cannot get the branch information from the scm repository : \n"
                     + e.getLocalizedMessage(), e);
