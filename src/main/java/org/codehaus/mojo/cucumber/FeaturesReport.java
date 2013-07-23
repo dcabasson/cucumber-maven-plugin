@@ -1102,6 +1102,7 @@ public class FeaturesReport extends AbstractMavenReport {
             final ChangeLogScmResult clScmResult = this.log(featureFile, fromVersion);
             if (!clScmResult.getChangeLog().getChangeSets().isEmpty()) { // we have changes
                                                                          // since last version!
+                this.getLog().debug("Changes have occured since last Scm Revision");
                 final StringBuilder historyBuilder = new StringBuilder();
                 for (final ChangeSet aChangeSet : clScmResult.getChangeLog().getChangeSets()) {
                     historyBuilder.append("\n");
@@ -1114,6 +1115,8 @@ public class FeaturesReport extends AbstractMavenReport {
                 }
                 featureChanged = this.confluenceClient.generateConfluenceFeaturePage(parentPageTitle,
                         featureSummary.getFeatureTitle(), wikiContent, historyBuilder.toString());
+            } else {
+                this.getLog().debug("No changes to that page since last SCM revision");
             }
 
         } catch (final MojoExecutionException e) {
