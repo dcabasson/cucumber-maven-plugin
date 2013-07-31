@@ -48,6 +48,8 @@ import org.codehaus.plexus.util.DirectoryWalker;
 import org.codehaus.plexus.util.FileUtils;
 import org.codehaus.plexus.util.IOUtil;
 
+import confluence.rpc.soap_axis.confluenceservice.ConfluenceServiceProxy;
+
 /**
  * @author Denis Cabasson
  * @modifiedBy Qiuliang Tang
@@ -136,6 +138,13 @@ public class FeaturesReport extends AbstractMavenReport {
      */
     private String password;
 
+    /**
+     * The upper limit for the SVN revision to be used by this plugin
+     * 
+     * @parameter
+     */
+    private Integer topSvnRevision;
+
     static class CapabilityDirectory {
         public String name;
 
@@ -193,7 +202,7 @@ public class FeaturesReport extends AbstractMavenReport {
                             final StringBuilder builder = new StringBuilder();
                             try {
                                 final ChangeLogScmResult clScmResult = FeaturesReport.this.log(useCase.packageFile,
-                                        null);
+                                        null, toVersion);
                                 for (final ChangeSet aChangeSet : clScmResult.getChangeLog().getChangeSets()) {
                                     builder.append("\n");
                                     builder.append("Updated from revision ");
@@ -1012,12 +1021,6 @@ public class FeaturesReport extends AbstractMavenReport {
     private File featuresDirectory;
 
     /**
-     * @parameter expression="${project.build.directory}/generated-site/apt"
-     * @required
-     */
-    private File generatedSiteDirectory;
-
-    /**
      * @parameter expression="${basedir}"
      * @required
      * @readonly
@@ -1026,7 +1029,14 @@ public class FeaturesReport extends AbstractMavenReport {
 
     private final Map<String, String> personas = new HashMap<String, String>();
 
-    private ConfluenceSoapClient confluenceClient;
+    private ConfluenceSoapClient<? extends ConfluenceServiceProxy> confluenceClient;
+
+    /**
+     * The upper limit of the SVN revision to consider. This is intended to prevent race conditions
+     * where a newer version might be available at svn log time as opposed to the initial checkout
+     * of the code.
+     */
+    private ScmVersion toVersion;
 
     @Override
     protected void executeReport(final Locale locale) throws MavenReportException {
@@ -1037,6 +1047,14 @@ public class FeaturesReport extends AbstractMavenReport {
         } else {
             this.confluenceClient = new ConfluenceV2SoapClient(getConfluenceUsername(), getConfluencePassword(),
                     confluenceSpaceKey, confluenceUrl);
+        }
+
+        if (topSvnRevision != null) { // there is an upper bound to what we are supposed to log
+            this.toVersion = new ScmRevision(topSvnRevision.toString());
+            this.getLog().info("The top revision has been set to " + topSvnRevision.toString());
+        } else {
+            this.toVersion = null;
+            this.getLog().info("No top revision available, will use HEAD");
         }
 
         if (this.featuresDirectory.exists() && this.featuresDirectory.isDirectory()) {
@@ -1099,7 +1117,7 @@ public class FeaturesReport extends AbstractMavenReport {
             }
 
             // Add revision information
-            final ChangeLogScmResult clScmResult = this.log(featureFile, fromVersion);
+            final ChangeLogScmResult clScmResult = this.log(featureFile, fromVersion, toVersion);
             if (!clScmResult.getChangeLog().getChangeSets().isEmpty()) { // we have changes
                                                                          // since last version!
                 this.getLog().debug("Changes have occured since last Scm Revision");
@@ -1213,7 +1231,8 @@ public class FeaturesReport extends AbstractMavenReport {
         return repository;
     }
 
-    private ChangeLogScmResult log(final File file, final ScmVersion fromVersion) throws MojoExecutionException {
+    private ChangeLogScmResult log(final File file, final ScmVersion fromVersion, final ScmVersion toVersion)
+            throws MojoExecutionException {
         final ChangeLogScmResult changeLog;
         try {
             this.getLog().debug("File to generate the changeset : " + file);
@@ -1221,7 +1240,7 @@ public class FeaturesReport extends AbstractMavenReport {
             final ScmRepository repository = this.getScmRepository(file);
 
             changeLog = this.scmManager.changeLog(repository,
-                    new ScmFileSet(new File(file.getParent()), new File(file.getName())), fromVersion, null);
+                    new ScmFileSet(new File(file.getParent()), new File(file.getName())), fromVersion, toVersion);
         } catch (final Exception e) {
             throw new MojoExecutionException("Cannot get the branch information from the scm repository : \n"
                     + e.getLocalizedMessage(), e);
