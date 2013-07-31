@@ -1105,7 +1105,7 @@ public class FeaturesReport extends AbstractMavenReport {
                 this.getLog().debug("This page currently does not exist in Confluence");
             } else {
                 this.getLog().debug(
-                        "A version of the page already exists in Confluence, generated from revision : "
+                        "A version of the page ("+featureSummary.getFeatureTitle()+") already exists in Confluence, generated from revision : "
                                 + revisionInConfluence);
             }
 
