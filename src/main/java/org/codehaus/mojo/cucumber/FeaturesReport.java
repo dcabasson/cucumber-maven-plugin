@@ -12,6 +12,7 @@ import java.io.LineNumberReader;
 import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -1122,15 +1123,17 @@ public class FeaturesReport extends AbstractMavenReport {
                                                                          // since last version!
                 this.getLog().debug("Changes have occured since last Scm Revision");
                 final StringBuilder historyBuilder = new StringBuilder();
-                for (final ChangeSet aChangeSet : clScmResult.getChangeLog().getChangeSets()) {
-                    historyBuilder.append("\n");
+                final List<ChangeSet> changes = clScmResult.getChangeLog().getChangeSets();
+                for (int i=changes.size()-1;i>=0;i--) {
+                	ChangeSet aChangeSet = changes.get(i);
+                	historyBuilder.append("\n");
                     historyBuilder.append("Updated from revision ");
                     historyBuilder.append(aChangeSet.getRevision());
                     historyBuilder.append(" by ");
                     historyBuilder.append(aChangeSet.getAuthor());
                     historyBuilder.append(" : ");
                     historyBuilder.append(aChangeSet.getComment().replaceAll("\\s+", " "));
-                }
+				}
                 featureChanged = this.confluenceClient.generateConfluenceFeaturePage(parentPageTitle,
                         featureSummary.getFeatureTitle(), wikiContent, historyBuilder.toString());
             } else {
