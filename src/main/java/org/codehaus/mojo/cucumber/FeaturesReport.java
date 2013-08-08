@@ -1310,7 +1310,8 @@ public class FeaturesReport extends AbstractMavenReport {
      * @return <code>true</code> if the epic is using markdown, false otherwise
      */
     private static boolean isEpicMarkdown(UseCaseDirectory epicDirectory) {
-        return ("md".equals(FileUtils.getExtension(epicDirectory.packageFile.getAbsolutePath())));
+        
+        return epicDirectory.packageFile!=null && ("md".equals(FileUtils.getExtension(epicDirectory.packageFile.getAbsolutePath())));
 
     }
 
