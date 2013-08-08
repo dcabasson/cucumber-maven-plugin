@@ -16,6 +16,10 @@ import org.codehaus.mojo.cucumber.bean.FeatureSummary;
 
 public class GherkinListener implements Listener {
 
+    public static final String APT_LANGUAGE = "apt";
+
+    public static final String MARKDOWN_LANGUAGE = "markdown";
+
     private final Sink sink;
 
     private int previousRowLine = -1;
@@ -24,13 +28,24 @@ public class GherkinListener implements Listener {
 
     private final Map<String, String> personas;
 
+    /**
+     * The language used in the description. <br />
+     * Can typically be apt or markdown.
+     */
+    private final String descriptionLanguage;
+
     public GherkinListener(final Sink sink, final Map<String, String> personas) {
+        this(sink, personas, APT_LANGUAGE);
+    }
+
+    public GherkinListener(final Sink sink, final Map<String, String> personas, String descriptionLanguage) {
         this.sink = sink;
         this.personas = personas;
+        this.descriptionLanguage = descriptionLanguage;
     }
 
     public void background(final String keyword, final String name, final String description, final int line) {
-        final String confDescription = this.parseDescriptionForApt(description);
+        final String confDescription = this.parseDescriptionForMarkup(description);
         final String localDescription = this.parseDescriptionForPersonas(confDescription);
         try {
             this.sink.lineBreak();
@@ -73,7 +88,7 @@ public class GherkinListener implements Listener {
     }
 
     public void examples(final String keyword, final String name, final String description, final int line) {
-        final String confDescription = this.parseDescriptionForApt(description);
+        final String confDescription = this.parseDescriptionForMarkup(description);
         final String localDescription = this.parseDescriptionForPersonas(confDescription);
         try {
             this.sink.section3();
@@ -91,7 +106,7 @@ public class GherkinListener implements Listener {
     }
 
     public void feature(final String keyword, final String name, final String description, final int line) {
-        final String confDescription = this.parseDescriptionForApt(description);
+        final String confDescription = this.parseDescriptionForMarkup(description);
         final String localDescription = this.parseDescriptionForPersonas(confDescription);
         // capture the title of the feature at that point.
         this.featureSummary.setFeatureTitle(name);
@@ -143,7 +158,7 @@ public class GherkinListener implements Listener {
     }
 
     public void scenario(final String keyword, final String name, final String description, final int line) {
-        final String confDescription = this.parseDescriptionForApt(description);
+        final String confDescription = this.parseDescriptionForMarkup(description);
         final String localDescription = this.parseDescriptionForPersonas(confDescription);
         try {
             this.sink.lineBreak();
@@ -167,7 +182,7 @@ public class GherkinListener implements Listener {
     }
 
     public void step(final String keyword, final String name, final int line) {
-        final String confDescription = this.parseDescriptionForApt(name);
+        final String confDescription = this.parseDescriptionForMarkup(name);
         final String localDescription = this.parseDescriptionForPersonas(confDescription);
         try {
             final String strippedKeyword = StringUtils.strip(keyword);
@@ -193,15 +208,25 @@ public class GherkinListener implements Listener {
         return this.featureSummary;
     }
 
-    private String parseDescriptionForApt(final String description) {
-        return FeaturesReport.parseDescriptionForApt(description);
+    /**
+     * Parses the description for a markup language. <br>
+     * Which language to use is driven by {@link #descriptionLanguage}.
+     * 
+     * @param description the description in a markup format
+     * @return the description in the Confluence format
+     */
+    private String parseDescriptionForMarkup(final String description) {
+        if (MARKDOWN_LANGUAGE.equals(this.descriptionLanguage)) {
+            return FeaturesReport.parseDescriptionForMd(description);
+        } else {
+            return FeaturesReport.parseDescriptionForApt(description);
+        }
     }
 
     private String parseDescriptionForPersonas(final String description) {
         String localDescription = description;
         for (final String persona : this.personas.keySet()) {
-            localDescription = localDescription.replaceAll(persona, "[$0|" + this.personas.get(persona)
-                    + "]");
+            localDescription = localDescription.replaceAll(persona, "[$0|" + this.personas.get(persona) + "]");
         }
         return localDescription;
     }
