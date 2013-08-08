@@ -30,13 +30,13 @@
 			<id>nexus-releases</id>
 			<uniqueVersion>false</uniqueVersion>
 			<name>StatCan-releases</name>
-			<url>http://nexus/nexus/content/repositories/StatCan-releases/</url>
+			<url>http://nexus/nexus/content/repositories/releases/</url>
 		</repository>
 		<snapshotRepository>
 			<id>nexus-snapshots</id>
 			<uniqueVersion>true</uniqueVersion>
 			<name>StatCan-snapshots</name>
-			<url>http://nexus/nexus/content/repositories/StatCan-snapshots/</url>
+			<url>http://nexus/nexus/content/repositories/snapshots/</url>
 		</snapshotRepository>
 	</distributionManagement>
 
