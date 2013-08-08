@@ -283,7 +283,7 @@ public abstract class ConfluenceSoapClient<P extends ConfluenceServiceProxy> {
 
 	public Boolean generateConfluenceFeaturePage(final String parentPageTitle,
 			final String pageTitle, final String wikiContent,
-			final String textComments) {
+			final String newPageHistoryLog) {
 		boolean featureChanged = false;
 		try {
 			this.getLog().debug(
@@ -346,27 +346,32 @@ public abstract class ConfluenceSoapClient<P extends ConfluenceServiceProxy> {
 				final Matcher pageMatcher = pattern.matcher(pageContent);
 
 				if (pageMatcher.find()) {
-					String tipComment = pageContent.substring(
-							pageMatcher.start(), pageMatcher.end());
-					String verComments = "";
-					if (textComments.contains(tipComment)) {
-						verComments = textComments.substring(0,
-								textComments.indexOf(tipComment)).trim();
+					String pageRevisionInfo = pageMatcher.group(0);
+					final String strippedPageHistoryLog;
+					this.getLog().debug(
+							"TThe new page history log comment is : "
+									+ newPageHistoryLog);
+					if (newPageHistoryLog.contains(pageRevisionInfo)) {
+						strippedPageHistoryLog = newPageHistoryLog.substring(0,
+								newPageHistoryLog.indexOf(pageRevisionInfo))
+								.trim();
 					} else {
-						verComments = textComments.trim();
+						strippedPageHistoryLog = newPageHistoryLog.trim();
 					}
-
-					if (!verComments.isEmpty()) {
+					this.getLog().debug(
+							"The stripped new page history log comment is : '" + strippedPageHistoryLog
+									+ "'");
+					if (!strippedPageHistoryLog.isEmpty()) {
 						featureChanged = true;
 						final RemotePageUpdateOptions updateOptions = new RemotePageUpdateOptions();
 						final String topRevision = this
-								.getTopRevision(textComments);
-						tipComment = "<p>&nbsp;</p><p>Updated from revision "
+								.getTopRevision(newPageHistoryLog);
+						final String newPageRevisionInfo = "<p>&nbsp;</p><p>Updated from revision "
 								+ topRevision + "</p>";
 						this.getLog().debug(
 								"Page updated from revision : " + topRevision);
-						page.setContent(storableContent + tipComment);
-						updateOptions.setVersionComment("\n" + verComments);
+						page.setContent(storableContent + newPageRevisionInfo);
+						updateOptions.setVersionComment("\n" + strippedPageHistoryLog);
 						RemotePage updatedPage = confluenceClient.updatePage(
 								token, page, updateOptions);
 						this.getLog().debug(
@@ -378,11 +383,11 @@ public abstract class ConfluenceSoapClient<P extends ConfluenceServiceProxy> {
 					// features
 					final RemotePageUpdateOptions updateOptions = new RemotePageUpdateOptions();
 					final String topRevision = this
-							.getTopRevision(textComments);
+							.getTopRevision(newPageHistoryLog);
 					final String tipComment = "<p>&nbsp;</p><p>Updated from revision "
 							+ topRevision + "</p>";
 					page.setContent(storableContent + tipComment);
-					updateOptions.setVersionComment(textComments);
+					updateOptions.setVersionComment(newPageHistoryLog);
 					confluenceClient.updatePage(token, page, updateOptions);
 				}
 
@@ -399,11 +404,12 @@ public abstract class ConfluenceSoapClient<P extends ConfluenceServiceProxy> {
 				page = confluenceClient.storePage(token, page);
 
 				final RemotePageUpdateOptions updateOptions = new RemotePageUpdateOptions();
-				final String topRevision = this.getTopRevision(textComments);
+				final String topRevision = this
+						.getTopRevision(newPageHistoryLog);
 				final String tipComment = "<p>&nbsp;</p><p>Updated from revision "
 						+ topRevision + "</p>";
 				page.setContent(storableContent + tipComment);
-				updateOptions.setVersionComment(textComments);
+				updateOptions.setVersionComment(newPageHistoryLog);
 				confluenceClient.updatePage(token, page, updateOptions);
 			}
 
