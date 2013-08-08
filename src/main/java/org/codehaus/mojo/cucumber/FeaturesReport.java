@@ -199,7 +199,7 @@ public class FeaturesReport extends AbstractMavenReport {
                             IOUtil.close(reader);
                             sink.flush();
                             sink.close();
-                            final String title = sink.getTitle().trim();
+                            final String title = StringUtils.defaultString(sink.getTitle()).trim();
                             if (!title.isEmpty()) {
                                 epicName = title;
                             }
