@@ -44,6 +44,7 @@
 		<project.build.java.target>1.5</project.build.java.target>
 		<maven.scm.version>1.7</maven.scm.version>
 		<mavenVersion>3.0</mavenVersion>
+		<doxia.version>1.4</doxia.version>
 	</properties>
 	<build>
 		<plugins>
@@ -90,20 +91,20 @@
 			<version>2.1</version>
 		</dependency>
 		<dependency>
-     <groupId>org.apache.maven.scm</groupId>
-     <artifactId>maven-scm-api</artifactId>
-     <version>${maven.scm.version}</version>
-   </dependency>
-   <dependency>
-     <groupId>org.apache.maven.scm</groupId>
-     <artifactId>maven-scm-manager-plexus</artifactId>
-     <version>${maven.scm.version}</version>
-   </dependency>
-   <dependency>
-     <groupId>org.apache.maven.scm</groupId>
-     <artifactId>maven-scm-provider-svn-commons</artifactId>
-     <version>${maven.scm.version}</version>
-   </dependency>
+			<groupId>org.apache.maven.scm</groupId>
+			<artifactId>maven-scm-api</artifactId>
+			<version>${maven.scm.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.maven.scm</groupId>
+			<artifactId>maven-scm-manager-plexus</artifactId>
+			<version>${maven.scm.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.maven.scm</groupId>
+			<artifactId>maven-scm-provider-svn-commons</artifactId>
+			<version>${maven.scm.version}</version>
+		</dependency>
 		<dependency>
 			<groupId>org.apache.maven.scm</groupId>
 			<artifactId>maven-scm-provider-svnexe</artifactId>
@@ -122,111 +123,117 @@
 		<dependency>
 			<groupId>org.apache.maven.doxia</groupId>
 			<artifactId>doxia-sink-api</artifactId>
-			<version>1.2</version>
+			<version>${doxia.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.maven.doxia</groupId>
 			<artifactId>doxia-core</artifactId>
-			<version>1.2</version>
+			<version>${doxia.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.maven.doxia</groupId>
 			<artifactId>doxia-module-apt</artifactId>
-			<version>1.2</version>
+			<version>${doxia.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.maven.doxia</groupId>
+			<artifactId>doxia-module-confluence</artifactId>
+			<version>${doxia.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.maven.doxia</groupId>
+			<artifactId>doxia-module-markdown</artifactId>
+			<version>${doxia.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.axis</groupId>
 			<artifactId>axis</artifactId>
 			<version>1.4</version>
 		</dependency>
-			<dependency>
-				<groupId>org.apache.axis</groupId>
-				<artifactId>axis-jaxrpc</artifactId>
-				<version>1.4</version>
-			</dependency>
-			<dependency>
-				<groupId>org.apache.axis2</groupId>
-				<artifactId>axis2-saaj-api</artifactId>
-				<version>1.3</version>
-				<exclusions>
-					<exclusion>
-						<groupId>org.apache.geronimo.specs
-						</groupId>
-						<artifactId>geronimo-activation_1.1_spec
-						</artifactId>
-					</exclusion>
-					<exclusion>
-						<groupId>org.apache.geronimo.specs
-						</groupId>
-						<artifactId>geronimo-javamail_1.4_spec
-						</artifactId>
-					</exclusion>
-					<exclusion>
-						<groupId>commons-io</groupId>
-						<artifactId>commons-io</artifactId>
-					</exclusion>
-					<exclusion>
-						<groupId>org.apache.ws.commons.axiom
-						</groupId>
-						<artifactId>axiom-api</artifactId>
-					</exclusion>
-					<exclusion>
-						<groupId>xerces</groupId>
-						<artifactId>xercesImpl</artifactId>
-					</exclusion>
-					<exclusion>
-						<groupId>javax.mail</groupId>
-						<artifactId>mail</artifactId>
-					</exclusion>
-					<exclusion>
-						<groupId>org.apache.ws.commons.axiom
-						</groupId>
-						<artifactId>axiom-impl</artifactId>
-					</exclusion>
-					<exclusion>
-						<groupId>org.apache.ws.commons.axiom
-						</groupId>
-						<artifactId>axiom-dom</artifactId>
-					</exclusion>
-					<exclusion>
-						<groupId>org.codehaus.woodstox</groupId>
-						<artifactId>wstx-asl</artifactId>
-					</exclusion>
-					<exclusion>
-						<groupId>xalan</groupId>
-						<artifactId>xalan</artifactId>
-					</exclusion>
-					<exclusion>
-						<groupId>xml-apis</groupId>
-						<artifactId>xml-apis</artifactId>
-					</exclusion>
-				</exclusions>
-			</dependency>
-			<dependency>
-				<groupId>soap</groupId>
-				<artifactId>soap</artifactId>
-				<version>2.3.1</version>
-			</dependency>
-			<dependency>
-				<groupId>commons-discovery</groupId>
-				<artifactId>commons-discovery</artifactId>
-				<version>0.4</version>
-			</dependency>
-			<dependency>
-				<groupId>wsdl4j</groupId>
-				<artifactId>wsdl4j</artifactId>
-				<version>1.5.1</version>
-			</dependency>
-			<dependency>
-				<groupId>commons-logging</groupId>
-				<artifactId>commons-logging</artifactId>
-				<version>1.1.1</version>
-			</dependency>
 		<dependency>
-			<groupId>org.apache.maven.doxia</groupId>
-			<artifactId>doxia-module-confluence</artifactId>
-			<version>1.3</version>
+			<groupId>org.apache.axis</groupId>
+			<artifactId>axis-jaxrpc</artifactId>
+			<version>1.4</version>
 		</dependency>
+		<dependency>
+			<groupId>org.apache.axis2</groupId>
+			<artifactId>axis2-saaj-api</artifactId>
+			<version>1.3</version>
+			<exclusions>
+				<exclusion>
+					<groupId>org.apache.geronimo.specs
+						</groupId>
+					<artifactId>geronimo-activation_1.1_spec
+						</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>org.apache.geronimo.specs
+						</groupId>
+					<artifactId>geronimo-javamail_1.4_spec
+						</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>commons-io</groupId>
+					<artifactId>commons-io</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>org.apache.ws.commons.axiom
+						</groupId>
+					<artifactId>axiom-api</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>xerces</groupId>
+					<artifactId>xercesImpl</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>javax.mail</groupId>
+					<artifactId>mail</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>org.apache.ws.commons.axiom
+						</groupId>
+					<artifactId>axiom-impl</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>org.apache.ws.commons.axiom
+						</groupId>
+					<artifactId>axiom-dom</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>org.codehaus.woodstox</groupId>
+					<artifactId>wstx-asl</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>xalan</groupId>
+					<artifactId>xalan</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>xml-apis</groupId>
+					<artifactId>xml-apis</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+		<dependency>
+			<groupId>soap</groupId>
+			<artifactId>soap</artifactId>
+			<version>2.3.1</version>
+		</dependency>
+		<dependency>
+			<groupId>commons-discovery</groupId>
+			<artifactId>commons-discovery</artifactId>
+			<version>0.4</version>
+		</dependency>
+		<dependency>
+			<groupId>wsdl4j</groupId>
+			<artifactId>wsdl4j</artifactId>
+			<version>1.5.1</version>
+		</dependency>
+		<dependency>
+			<groupId>commons-logging</groupId>
+			<artifactId>commons-logging</artifactId>
+			<version>1.1.1</version>
+		</dependency>
+
 		<dependency>
 			<groupId>info.cukes</groupId>
 			<artifactId>gherkin</artifactId>
@@ -237,5 +244,6 @@
 			<artifactId>commons-io</artifactId>
 			<version>2.1</version>
 		</dependency>
+
 	</dependencies>
 </project>

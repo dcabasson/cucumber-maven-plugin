@@ -26,6 +26,8 @@ import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.maven.doxia.module.apt.AptParser;
 import org.apache.maven.doxia.module.confluence.ConfluenceSinkFactory;
+import org.apache.maven.doxia.module.markdown.MarkdownParser;
+import org.apache.maven.doxia.parser.Parser;
 import org.apache.maven.doxia.sink.AbstractSink;
 import org.apache.maven.doxia.sink.Sink;
 import org.apache.maven.doxia.sink.SinkEventAttributes;
@@ -182,14 +184,18 @@ public class FeaturesReport extends AbstractMavenReport {
                         try {
                             // Get confluence sink
                             final ByteArrayOutputStream bos = new ByteArrayOutputStream();
-                            // final FileReader reader = new FileReader(useCase.packageFile);
                             final InputStreamReader reader = new InputStreamReader(new FileInputStream(
                                     useCase.packageFile), "UTF8");
                             final ConfluenceSinkFactory factory = new ConfluenceSinkFactory();
                             final Sink confluenceSink = factory.createSink(bos, "UTF-8");
                             final TitleSinkWrapper sink = new TitleSinkWrapper(confluenceSink);
-                            final AptParser aptParser = new AptParser();
-                            aptParser.parse(reader, sink);
+                            final Parser parser;
+                            if (isEpicMarkdown(useCase)) {
+                                parser = new MarkdownParser();
+                            } else {
+                                parser = new AptParser();
+                            }
+                            parser.parse(reader, sink);
                             IOUtil.close(reader);
                             sink.flush();
                             sink.close();
@@ -234,7 +240,8 @@ public class FeaturesReport extends AbstractMavenReport {
                     final List<FeatureSummary> featureSummaries = new ArrayList<FeatureSummary>();
                     for (final File feature : useCase.features) {
                         Boolean featureChanged = false;
-                        featureChanged = FeaturesReport.this.generateFeaturePage(epicName, feature, featureSummaries);
+                        featureChanged = FeaturesReport.this.generateFeaturePage(epicName, feature, featureSummaries,
+                                useCase);
                         if (featureChanged) {
                             epicFeatureSummariesChanged = true;
                         }
@@ -315,13 +322,13 @@ public class FeaturesReport extends AbstractMavenReport {
             final UseCaseDirectory useCase = capability.useCases.get(useCaseName);
             final String fileName = FilenameUtils.getBaseName(aFile.getName());
             final String fileExtension = FileUtils.getExtension(aFile.getAbsolutePath());
-            if ("apt".equals(fileExtension)) {
+            if ("apt".equals(fileExtension) || "md".equals(fileExtension)) {
                 if ("signoff".equals(fileName)) {
                     useCase.signoffFile = aFile;
                 } else if ("package".equals(fileName)) {
                     useCase.packageFile = aFile;
                 } else {
-                    FeaturesReport.this.getLog().warn("Unrecognized apt file : " + aFile.getAbsolutePath());
+                    FeaturesReport.this.getLog().warn("Unrecognized documentation file : " + aFile.getAbsolutePath());
                 }
             } else if ("feature".equals(fileExtension)) {
                 useCase.features.add(aFile);
@@ -1061,6 +1068,7 @@ public class FeaturesReport extends AbstractMavenReport {
         if (this.featuresDirectory.exists() && this.featuresDirectory.isDirectory()) {
             final List<String> allIncludes = new ArrayList<String>();
             allIncludes.add("**/package.apt");
+            allIncludes.add("**/package.md");
             allIncludes.add("**/signoff.apt");
             allIncludes.add("**/*.feature");
             allIncludes.add("**/personas.txt");
@@ -1082,7 +1090,7 @@ public class FeaturesReport extends AbstractMavenReport {
      * 
      */
     protected Boolean generateFeaturePage(final String parentPageTitle, final File featureFile,
-            final List<FeatureSummary> featureSummaries) {
+            final List<FeatureSummary> featureSummaries, UseCaseDirectory epicInformation) {
         Boolean featureChanged = false;
         try {
             this.getLog().debug("Generating feature file : " + featureFile.getAbsolutePath());
@@ -1090,7 +1098,8 @@ public class FeaturesReport extends AbstractMavenReport {
             final ByteArrayOutputStream bos = new ByteArrayOutputStream();
             final Sink sink = factory.createSink(bos, "UTF-8");
 
-            final GherkinListener listener = new GherkinListener(sink, this.personas);
+            final GherkinListener listener = new GherkinListener(sink, this.personas,
+                    isEpicMarkdown(epicInformation) ? GherkinListener.MARKDOWN_LANGUAGE : GherkinListener.APT_LANGUAGE);
             final I18nLexer gherkinLexer = new I18nLexer(listener);
             gherkinLexer.scan(FileUtils.fileRead(featureFile, "UTF-8"));
             final FeatureSummary featureSummary = listener.getFeatureSummary();
@@ -1272,6 +1281,37 @@ public class FeaturesReport extends AbstractMavenReport {
             IOUtil.close(reader);
         }
         return strConfluence;
+    }
+
+    public static String parseDescriptionForMd(final String description) {
+        String strConfluence = description;
+        final ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        final StringReader reader = new StringReader(description);
+        final ConfluenceSinkFactory factory = new ConfluenceSinkFactory();
+        try {
+            final Sink sink = factory.createSink(bos, "UTF-8");
+            final MarkdownParser parser = new MarkdownParser();
+            parser.parse(reader, sink);
+            sink.flush();
+            sink.close();
+            strConfluence = bos.toString("UTF-8");
+        } catch (final Exception e) {
+            e.printStackTrace();
+        } finally {
+            IOUtil.close(reader);
+        }
+        return strConfluence;
+    }
+
+    /**
+     * Discovers whether this epic is using markdown rather than apt.
+     * 
+     * @param epicDirectory the information about this epic
+     * @return <code>true</code> if the epic is using markdown, false otherwise
+     */
+    private static boolean isEpicMarkdown(UseCaseDirectory epicDirectory) {
+        return ("md".equals(FileUtils.getExtension(epicDirectory.packageFile.getAbsolutePath())));
+
     }
 
     private String getConfluenceUsername() {
