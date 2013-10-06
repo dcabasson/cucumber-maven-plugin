@@ -182,8 +182,7 @@ public class GherkinListener implements Listener {
     }
 
     public void step(final String keyword, final String name, final int line) {
-        final String confDescription = this.parseDescriptionForMarkup(name);
-        final String localDescription = this.parseDescriptionForPersonas(confDescription);
+        final String localDescription = this.parseDescriptionForPersonas(name);
         try {
             final String strippedKeyword = StringUtils.strip(keyword);
             this.sink.paragraph();
