@@ -1,27 +1,7 @@
 package org.codehaus.mojo.cucumber;
 
+import confluence.rpc.soap_axis.confluenceservice.ConfluenceServiceProxy;
 import gherkin.lexer.I18nLexer;
-
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.LineNumberReader;
-import java.io.StringReader;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.ResourceBundle;
-import java.util.SortedMap;
-import java.util.TreeMap;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.maven.doxia.module.apt.AptParser;
@@ -36,11 +16,7 @@ import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.reporting.AbstractMavenReport;
 import org.apache.maven.reporting.MavenReportException;
-import org.apache.maven.scm.ChangeSet;
-import org.apache.maven.scm.ScmException;
-import org.apache.maven.scm.ScmFileSet;
-import org.apache.maven.scm.ScmRevision;
-import org.apache.maven.scm.ScmVersion;
+import org.apache.maven.scm.*;
 import org.apache.maven.scm.command.changelog.ChangeLogScmResult;
 import org.apache.maven.scm.manager.ScmManager;
 import org.apache.maven.scm.provider.ScmProviderRepository;
@@ -51,7 +27,10 @@ import org.codehaus.plexus.util.DirectoryWalker;
 import org.codehaus.plexus.util.FileUtils;
 import org.codehaus.plexus.util.IOUtil;
 
-import confluence.rpc.soap_axis.confluenceservice.ConfluenceServiceProxy;
+import java.io.*;
+import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * @author Denis Cabasson
@@ -1109,7 +1088,7 @@ public class FeaturesReport extends AbstractMavenReport {
             String wikiContent = bos.toString("UTF-8");
             wikiContent = wikiContent.replaceAll("&amp;", "&");
 
-            final Integer revisionInConfluence = this.confluenceClient.getCurrentPageVersion(featureSummary
+            final String revisionInConfluence = this.confluenceClient.getCurrentPageVersion(featureSummary
                     .getFeatureTitle());
             if (revisionInConfluence == null) {
                 this.getLog().debug("This page currently does not exist in Confluence");
@@ -1143,6 +1122,7 @@ public class FeaturesReport extends AbstractMavenReport {
                     historyBuilder.append(" : ");
                     historyBuilder.append(aChangeSet.getComment().replaceAll("\\s+", " "));
 				}
+
                 featureChanged = this.confluenceClient.generateConfluenceFeaturePage(parentPageTitle,
                         featureSummary.getFeatureTitle(), wikiContent, historyBuilder.toString());
             } else {
