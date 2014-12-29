@@ -1,23 +1,22 @@
 package org.codehaus.mojo.cucumber;
 
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-import org.apache.commons.lang.math.NumberUtils;
-import org.apache.maven.plugin.logging.Log;
-import org.apache.maven.plugin.logging.SystemStreamLog;
-
 import com.atlassian.confluence.rpc.RemoteException;
 import com.atlassian.confluence.rpc.soap.beans.RemotePage;
 import com.atlassian.confluence.rpc.soap.beans.RemotePageUpdateOptions;
-
 import confluence.rpc.soap_axis.confluenceservice.ConfluenceServiceProxy;
+import org.apache.maven.plugin.logging.Log;
+import org.apache.maven.plugin.logging.SystemStreamLog;
+
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * @author Qiuliang Tang
  */
 
 public abstract class ConfluenceSoapClient<P extends ConfluenceServiceProxy> {
+
+	public static final String REVISION_REGEX = "Updated from revision (\\b[0-9a-f]{0,40}\\b)";
 
 	private Log log;
 
@@ -26,11 +25,11 @@ public abstract class ConfluenceSoapClient<P extends ConfluenceServiceProxy> {
 	}
 
 	public Log getLog() {
-		if (log == null) {
-			log = new SystemStreamLog();
+		if (this.log == null) {
+			this.log = new SystemStreamLog();
 		}
 
-		return log;
+		return this.log;
 	}
 
 	private final String username;
@@ -138,7 +137,7 @@ public abstract class ConfluenceSoapClient<P extends ConfluenceServiceProxy> {
 					// files
 					final String pageContent = page.getContent();
 					final Pattern pattern = Pattern
-							.compile("Updated from revision (\\d+)");
+							.compile(REVISION_REGEX);
 					final Matcher pageMatcher = pattern.matcher(pageContent);
 
 					if (pageMatcher.find()) {
@@ -244,8 +243,8 @@ public abstract class ConfluenceSoapClient<P extends ConfluenceServiceProxy> {
 	 * @return the version of source control that this page was generated from,
 	 *         or <code>null</code> if the page was not found
 	 */
-	public Integer getCurrentPageVersion(final String pageTitle) {
-		Integer pageRevision = null;
+	public String getCurrentPageVersion(final String pageTitle) {
+		String pageRevision = null;
 		try {
 			final P confluenceClient = createClient();
 			final String token = confluenceClient.login(this.username,
@@ -258,12 +257,11 @@ public abstract class ConfluenceSoapClient<P extends ConfluenceServiceProxy> {
 
 				// update page based on revision
 				final String pageContent = page.getContent();
-				final Pattern pattern = Pattern
-						.compile("Updated from revision (\\d+)");
+				final Pattern pattern = Pattern.compile(REVISION_REGEX);
 				final Matcher pageMatcher = pattern.matcher(pageContent);
 
 				if (pageMatcher.find()) {
-					pageRevision = NumberUtils.toInt(pageMatcher.group(1));
+					pageRevision = pageMatcher.group(1);
 				} else {
 					// will not reach here since revision exists for each
 					// features
@@ -342,7 +340,7 @@ public abstract class ConfluenceSoapClient<P extends ConfluenceServiceProxy> {
 				// update page based on revision
 				final String pageContent = page.getContent();
 				final Pattern pattern = Pattern
-						.compile("Updated from revision (\\d+)");
+						.compile(REVISION_REGEX);
 				final Matcher pageMatcher = pattern.matcher(pageContent);
 
 				if (pageMatcher.find()) {
@@ -425,13 +423,13 @@ public abstract class ConfluenceSoapClient<P extends ConfluenceServiceProxy> {
 			java.rmi.RemoteException;
 
 	private P createClient() {
-		return createClient(confluenceServerRoot);
+		return createClient(this.confluenceServerRoot);
 	}
 
 	protected abstract P createClient(String serverRoot);
 
 	public String getTopRevision(final String textComments) {
-		final Pattern pattern = Pattern.compile("Updated from revision (\\d+)");
+		final Pattern pattern = Pattern.compile(REVISION_REGEX);
 		final Matcher matcher = pattern.matcher(textComments);
 
 		String topRevision = "";
