@@ -182,8 +182,9 @@ public class FeaturesReport extends AbstractMavenReport {
                             if (!title.isEmpty()) {
                                 epicName = title;
                             }
-                            wikiContent = bos.toString("UTF-8");
-                            wikiContent = wikiContent.replaceAll("&amp;", "&");
+
+                            wikiContent = FeaturesReport.getWikiContent(bos);
+
                             // get revision information
                             final StringBuilder builder = new StringBuilder();
                             try {
@@ -263,8 +264,7 @@ public class FeaturesReport extends AbstractMavenReport {
 
                             confluenceSink.flush();
                             confluenceSink.close();
-                            String wikiFeatureSummariesContent = bos.toString("UTF-8");
-                            wikiFeatureSummariesContent = wikiFeatureSummariesContent.replaceAll("&amp;", "&");
+                            final String wikiFeatureSummariesContent = FeaturesReport.getWikiContent(bos);
                             wikiContent = wikiContent + wikiFeatureSummariesContent;
 
                         } catch (final Exception e) {
@@ -1025,6 +1025,14 @@ public class FeaturesReport extends AbstractMavenReport {
      */
     private ScmVersion toVersion;
 
+    public static String getWikiContent(final ByteArrayOutputStream bos) throws UnsupportedEncodingException {
+        String wikiContent = bos.toString("UTF-8");
+        wikiContent = wikiContent.replaceAll("&amp;", "&");
+        wikiContent = wikiContent.replaceAll("code\\|borderStyle=solid", "code");
+
+        return wikiContent;
+    }
+
     @Override
     protected void executeReport(final Locale locale) throws MavenReportException {
 
@@ -1069,7 +1077,7 @@ public class FeaturesReport extends AbstractMavenReport {
      * 
      */
     protected Boolean generateFeaturePage(final String parentPageTitle, final File featureFile,
-            final List<FeatureSummary> featureSummaries, UseCaseDirectory epicInformation) {
+            final List<FeatureSummary> featureSummaries, final UseCaseDirectory epicInformation) {
         Boolean featureChanged = false;
         try {
             this.getLog().debug("Generating feature file : " + featureFile.getAbsolutePath());
@@ -1085,8 +1093,8 @@ public class FeaturesReport extends AbstractMavenReport {
             featureSummaries.add(listener.getFeatureSummary());
             sink.flush();
             sink.close();
-            String wikiContent = bos.toString("UTF-8");
-            wikiContent = wikiContent.replaceAll("&amp;", "&");
+
+            String wikiContent = FeaturesReport.getWikiContent(bos);
 
             final String revisionInConfluence = this.confluenceClient.getCurrentPageVersion(featureSummary
                     .getFeatureTitle());
@@ -1098,9 +1106,9 @@ public class FeaturesReport extends AbstractMavenReport {
                                 + revisionInConfluence);
             }
 
-            ScmVersion fromVersion;
+            final ScmVersion fromVersion;
             if (revisionInConfluence != null) { // there is already something in Confluence
-                fromVersion = new ScmRevision(revisionInConfluence.toString());
+                fromVersion = new ScmRevision(revisionInConfluence);
             } else {
                 fromVersion = null;
             }
@@ -1113,7 +1121,7 @@ public class FeaturesReport extends AbstractMavenReport {
                 final StringBuilder historyBuilder = new StringBuilder();
                 final List<ChangeSet> changes = clScmResult.getChangeLog().getChangeSets();
                 for (int i=changes.size()-1;i>=0;i--) {
-                	ChangeSet aChangeSet = changes.get(i);
+                	final ChangeSet aChangeSet = changes.get(i);
                 	historyBuilder.append("\n");
                     historyBuilder.append("Updated from revision ");
                     historyBuilder.append(aChangeSet.getRevision());
@@ -1289,7 +1297,7 @@ public class FeaturesReport extends AbstractMavenReport {
      * @param epicDirectory the information about this epic
      * @return <code>true</code> if the epic is using markdown, false otherwise
      */
-    private static boolean isEpicMarkdown(UseCaseDirectory epicDirectory) {
+    private static boolean isEpicMarkdown(final UseCaseDirectory epicDirectory) {
         
         return epicDirectory.packageFile!=null && ("md".equals(FileUtils.getExtension(epicDirectory.packageFile.getAbsolutePath())));
 

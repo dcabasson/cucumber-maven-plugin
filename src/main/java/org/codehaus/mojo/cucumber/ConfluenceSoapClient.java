@@ -20,7 +20,7 @@ public abstract class ConfluenceSoapClient<P extends ConfluenceServiceProxy> {
 
 	private Log log;
 
-	public void setLog(Log log) {
+	public void setLog(final Log log) {
 		this.log = log;
 	}
 
@@ -55,17 +55,16 @@ public abstract class ConfluenceSoapClient<P extends ConfluenceServiceProxy> {
 	public void generateConfluenceCapabilityPage(final String parentPageTitle,
 			final String pageTitle) {
 		try {
-			final ConfluenceServiceProxy confluenceClient = createClient();
+			final ConfluenceServiceProxy confluenceClient = this.createClient();
 			final String token = confluenceClient.login(this.username,
 					this.password);
 			RemotePage page;
 			try {
-				page = confluenceClient
-						.getPage(token, this.spaceKey, pageTitle);
 				// the page exists in confluence
+				page = confluenceClient.getPage(token, this.spaceKey, pageTitle);
 			} catch (final RemoteException e) {
 				// the page does not exist in confluence
-				RemotePage parentPage;
+				final RemotePage parentPage;
 				parentPage = confluenceClient.getPage(token, this.spaceKey,
 						parentPageTitle);
 
@@ -88,12 +87,12 @@ public abstract class ConfluenceSoapClient<P extends ConfluenceServiceProxy> {
 			final Boolean epicFeatureSummariesChanged,
 			final Boolean isSecondTimeEnter) {
 		try {
-			final P confluenceClient = createClient();
-			final String token = confluenceClient.login(this.username,
-					this.password);
-			final String storableContent = createStorableContent(
-					confluenceClient, token, wikiContent);
+			final P confluenceClient = this.createClient();
+			final String token = confluenceClient.login(this.username, this.password);
+
+			final String storableContent = this.createStorableContent(confluenceClient, token, wikiContent);
 			RemotePage page;
+
 			try {
 				page = confluenceClient
 						.getPage(token, this.spaceKey, pageTitle);
@@ -246,10 +245,10 @@ public abstract class ConfluenceSoapClient<P extends ConfluenceServiceProxy> {
 	public String getCurrentPageVersion(final String pageTitle) {
 		String pageRevision = null;
 		try {
-			final P confluenceClient = createClient();
+			final P confluenceClient = this.createClient();
 			final String token = confluenceClient.login(this.username,
 					this.password);
-			RemotePage page;
+			final RemotePage page;
 			try {
 				page = confluenceClient
 						.getPage(token, this.spaceKey, pageTitle);
@@ -287,10 +286,10 @@ public abstract class ConfluenceSoapClient<P extends ConfluenceServiceProxy> {
 			this.getLog().debug(
 					"Working on storing the feature page : " + pageTitle
 							+ " in Confluence");
-			final P confluenceClient = createClient();
+			final P confluenceClient = this.createClient();
 			final String token = confluenceClient.login(this.username,
 					this.password);
-			final String storableContent = createStorableContent(
+			final String storableContent = this.createStorableContent(
 					confluenceClient, token, wikiContent);
 			RemotePage page;
 			try {
@@ -344,7 +343,7 @@ public abstract class ConfluenceSoapClient<P extends ConfluenceServiceProxy> {
 				final Matcher pageMatcher = pattern.matcher(pageContent);
 
 				if (pageMatcher.find()) {
-					String pageRevisionInfo = pageMatcher.group(0);
+					final String pageRevisionInfo = pageMatcher.group(0);
 					final String strippedPageHistoryLog;
 					this.getLog().debug(
 							"TThe new page history log comment is : "
@@ -370,7 +369,7 @@ public abstract class ConfluenceSoapClient<P extends ConfluenceServiceProxy> {
 								"Page updated from revision : " + topRevision);
 						page.setContent(storableContent + newPageRevisionInfo);
 						updateOptions.setVersionComment("\n" + strippedPageHistoryLog);
-						RemotePage updatedPage = confluenceClient.updatePage(
+						final RemotePage updatedPage = confluenceClient.updatePage(
 								token, page, updateOptions);
 						this.getLog().debug(
 								"The page (" + updatedPage.getTitle()
@@ -423,7 +422,7 @@ public abstract class ConfluenceSoapClient<P extends ConfluenceServiceProxy> {
 			java.rmi.RemoteException;
 
 	private P createClient() {
-		return createClient(this.confluenceServerRoot);
+		return this.createClient(this.confluenceServerRoot);
 	}
 
 	protected abstract P createClient(String serverRoot);
