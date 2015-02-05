@@ -106,7 +106,9 @@ public class GherkinListener implements Listener {
     }
 
     public void feature(final String keyword, final String name, final String description, final int line) {
+//        System.out.println("Found feature : " + name + " with description : " + description);
         final String confDescription = this.parseDescriptionForMarkup(description);
+//        System.out.println("Conf description : " + confDescription);
         final String localDescription = this.parseDescriptionForPersonas(confDescription);
         // capture the title of the feature at that point.
         this.featureSummary.setFeatureTitle(name);

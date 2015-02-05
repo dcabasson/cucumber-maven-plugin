@@ -5,4 +5,5 @@ encoding//src/main/java/confluence/rpc/soap_axis/confluenceservice_v1/Confluence
 encoding//src/main/java/confluence/rpc/soap_axis/confluenceservice_v1/ConfluenceSoapServiceServiceLocator.java=UTF-8
 encoding//src/main/java/confluence/rpc/soap_axis/confluenceservice_v1/ConfluenceserviceV1SoapBindingStub.java=UTF-8
 encoding//src/main/resources=UTF-8
+encoding//src/test/java=UTF-8
 encoding/<project>=UTF-8

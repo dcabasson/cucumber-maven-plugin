@@ -1,22 +1,46 @@
 package org.codehaus.mojo.cucumber;
 
-import confluence.rpc.soap_axis.confluenceservice.ConfluenceServiceProxy;
 import gherkin.lexer.I18nLexer;
+
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.LineNumberReader;
+import java.io.StringReader;
+import java.io.UnsupportedEncodingException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.ResourceBundle;
+import java.util.SortedMap;
+import java.util.TreeMap;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.maven.doxia.module.apt.AptParser;
 import org.apache.maven.doxia.module.confluence.ConfluenceSinkFactory;
-import org.apache.maven.doxia.module.markdown.MarkdownParser;
 import org.apache.maven.doxia.parser.Parser;
 import org.apache.maven.doxia.sink.AbstractSink;
 import org.apache.maven.doxia.sink.Sink;
 import org.apache.maven.doxia.sink.SinkEventAttributes;
+import org.apache.maven.doxia.sink.SinkFactory;
 import org.apache.maven.doxia.siterenderer.Renderer;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.reporting.AbstractMavenReport;
 import org.apache.maven.reporting.MavenReportException;
-import org.apache.maven.scm.*;
+import org.apache.maven.scm.ChangeSet;
+import org.apache.maven.scm.ScmException;
+import org.apache.maven.scm.ScmFileSet;
+import org.apache.maven.scm.ScmRevision;
+import org.apache.maven.scm.ScmVersion;
 import org.apache.maven.scm.command.changelog.ChangeLogScmResult;
 import org.apache.maven.scm.manager.ScmManager;
 import org.apache.maven.scm.provider.ScmProviderRepository;
@@ -27,10 +51,7 @@ import org.codehaus.plexus.util.DirectoryWalker;
 import org.codehaus.plexus.util.FileUtils;
 import org.codehaus.plexus.util.IOUtil;
 
-import java.io.*;
-import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import confluence.rpc.soap_axis.confluenceservice.ConfluenceServiceProxy;
 
 /**
  * @author Denis Cabasson
@@ -1090,11 +1111,14 @@ public class FeaturesReport extends AbstractMavenReport {
             final I18nLexer gherkinLexer = new I18nLexer(listener);
             gherkinLexer.scan(FileUtils.fileRead(featureFile, "UTF-8"));
             final FeatureSummary featureSummary = listener.getFeatureSummary();
+		this.getLog().debug("Extracted summary : " + featureSummary.getFeatureDescription());
             featureSummaries.add(listener.getFeatureSummary());
             sink.flush();
             sink.close();
 
             String wikiContent = FeaturesReport.getWikiContent(bos);
+		
+		this.getLog().debug("Full Wiki Content : " + wikiContent);
 
             final String revisionInConfluence = this.confluenceClient.getCurrentPageVersion(featureSummary
                     .getFeatureTitle());
@@ -1272,22 +1296,29 @@ public class FeaturesReport extends AbstractMavenReport {
     }
 
     public static String parseDescriptionForMd(final String description) {
+//        System.out.println("Parsing for MD : " + description);
+//        System.out.println("Parsing for MD length : " + description.length());
         String strConfluence = description;
+//        System.out.println("Parsing for MD strConfluence length : " + strConfluence.length());
         final ByteArrayOutputStream bos = new ByteArrayOutputStream();
         final StringReader reader = new StringReader(description);
-        final ConfluenceSinkFactory factory = new ConfluenceSinkFactory();
+        final SinkFactory factory = new ConfluenceSinkFactory();
         try {
             final Sink sink = factory.createSink(bos, "UTF-8");
-            final MarkdownParser parser = new MarkdownParser();
+            final Parser parser = new MarkdownParser();
             parser.parse(reader, sink);
             sink.flush();
             sink.close();
+//            System.out.println("Parsing for MD bos length : " + bos.size());
             strConfluence = bos.toString("UTF-8");
+//            System.out.println("Parsing for MD strConfluence length after : " + strConfluence.length());
         } catch (final Exception e) {
             e.printStackTrace();
         } finally {
             IOUtil.close(reader);
         }
+//        System.out.println("Result length : " + strConfluence.length());
+//        System.out.println("Result is : " + strConfluence);
         return strConfluence;
     }
 

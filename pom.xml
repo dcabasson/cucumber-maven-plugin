@@ -44,7 +44,7 @@
 		<project.build.java.target>1.5</project.build.java.target>
 		<maven.scm.version>1.7</maven.scm.version>
 		<mavenVersion>3.0</mavenVersion>
-		<doxia.version>1.6</doxia.version>
+		<doxia.version>1.4</doxia.version>
 	</properties>
 	<build>
 		<plugins>
@@ -253,6 +253,11 @@
 			<groupId>commons-io</groupId>
 			<artifactId>commons-io</artifactId>
 			<version>2.1</version>
+		</dependency>
+		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+			<scope>test</scope>
 		</dependency>
 	</dependencies>
 </project>
